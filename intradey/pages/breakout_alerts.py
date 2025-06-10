@@ -11,14 +11,15 @@ def render():
     past = now - timedelta(days=5)
 
     # Download clean 5-minute data
-    data = yf.download(SYMBOL, start=past, end=now, interval="5m", progress=False)
-    # data = data.dropna()  # Ensure no NaNs
+    data = yf.download(SYMBOL, start=past, end=now, interval="5m", progress=False, auto_adjust=False)
+
+    data = data.dropna()  # Ensure no NaNs
 
     # Ensure columns are Series
     data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
     vwap_numerator = (data["TP"] * data["Volume"]).cumsum()
     vwap_denominator = data["Volume"].cumsum()
-    data["VWAP"] = vwap_numerator / vwap_denominator
+    data["VWAP"] = pd.Series(vwap_numerator / vwap_denominator)
 
     # Breakout logic: If close > VWAP and increasing volume
     last = data.iloc[-1]
