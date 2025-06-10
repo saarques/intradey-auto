@@ -12,14 +12,16 @@ def render():
 
     # Download clean 5-minute data
     data = yf.download(SYMBOL, start=past, end=now, interval="5m", progress=False, auto_adjust=False)
+    data = data.dropna()
 
-    data = data.dropna()  # Ensure no NaNs
-
-    # Ensure columns are Series
+    # Typical Price
     data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
+
+    # VWAP calculation
     vwap_numerator = (data["TP"] * data["Volume"]).cumsum()
     vwap_denominator = data["Volume"].cumsum()
-    data["VWAP"] = pd.Series(vwap_numerator / vwap_denominator)
+    data["VWAP"] = vwap_numerator / vwap_denominator
+
 
     # Breakout logic: If close > VWAP and increasing volume
     last = data.iloc[-1]
