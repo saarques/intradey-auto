@@ -6,32 +6,25 @@ import pandas as pd
 def render():
     st.header("📈 Breakout Alerts")
 
-    SYMBOL = "^NSEI"
+    SYMBOL = "^NSEI"  # Nifty 50
     now = datetime.now()
-    past = now - timedelta(days=2)
-    data = yf.download(SYMBOL, start=past, end=now, interval="5m")
+    past = now - timedelta(days=5)
 
+    # Download clean 5-minute data
+    data = yf.download(SYMBOL, start=past, end=now, interval="5m", progress=False)
+    data = data.dropna()  # Ensure no NaNs
+
+    # Ensure columns are Series
     data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
-    data["VWAP"] = (data["TP"] * data["Volume"]).cumsum() / data["Volume"].cumsum()
+    vwap_numerator = (data["TP"] * data["Volume"]).cumsum()
+    vwap_denominator = data["Volume"].cumsum()
+    data["VWAP"] = vwap_numerator / vwap_denominator
 
+    # Breakout logic: If close > VWAP and increasing volume
     last = data.iloc[-1]
     prev = data.iloc[-2]
 
-    st.metric("Last Price", round(last["Close"], 2))
-    st.metric("VWAP", round(last["VWAP"], 2))
-    st.metric("Volume", int(last["Volume"]))
-
-    checklist = {
-        "Price > VWAP": last["Close"] > last["VWAP"],
-        "Bullish Candle": last["Close"] > last["Open"],
-        "Higher High": last["High"] > prev["High"],
-        "VWAP Slope Up": last["VWAP"] > data["VWAP"].iloc[-3]
-    }
-
-    st.write("### 🔍 Signal Conditions")
-    st.dataframe(pd.DataFrame(checklist.items(), columns=["Condition", "Met?"]))
-
-    if all(checklist.values()):
-        st.success("✅ Breakout Signal Detected")
+    if last["Close"] > last["VWAP"] and last["Volume"] > prev["Volume"]:
+        st.success(f"🚀 Breakout signal at {last.name.strftime('%Y-%m-%d %H:%M')} — Price: {last['Close']:.2f}")
     else:
-        st.info("ℹ️ No breakout yet, keep monitoring.")
+        st.info("📊 No breakout signal yet.")
