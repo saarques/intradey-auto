@@ -6,12 +6,17 @@ import pandas as pd
 def render():
     st.header("📈 Breakout Alerts")
 
-    SYMBOL = "^NSEI"  # Nifty 50
+    SYMBOL = "RELIANCE.NS"  # Changed from ^NSEI
     now = datetime.now()
     past = now - timedelta(days=5)
 
     # Download clean 5-minute data
     data = yf.download(SYMBOL, start=past, end=now, interval="5m", progress=False, auto_adjust=False)
+
+    if data.empty or data.shape[1] > 10:
+        st.error("❌ Could not fetch valid intraday data. Please try a different symbol.")
+        return
+
     data = data.dropna()
 
     # Typical Price
@@ -22,8 +27,7 @@ def render():
     vwap_denominator = data["Volume"].cumsum()
     data["VWAP"] = vwap_numerator / vwap_denominator
 
-
-    # Breakout logic: If close > VWAP and increasing volume
+    # Breakout logic
     last = data.iloc[-1]
     prev = data.iloc[-2]
 
