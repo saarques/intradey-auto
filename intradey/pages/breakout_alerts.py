@@ -12,7 +12,7 @@ def render():
 
     # Download clean 5-minute data
     data = yf.download(SYMBOL, start=past, end=now, interval="5m", progress=False)
-    data = data.dropna()  # Ensure no NaNs
+    # data = data.dropna()  # Ensure no NaNs
 
     # Ensure columns are Series
     data["TP"] = (data["High"] + data["Low"] + data["Close"]) / 3
